@@ -21,8 +21,8 @@ let isDarkMode = true;
 
 // Valores de controles
 let particleSize = parseFloat(particleSizeInput.value);
-let gap = parseInt(gapInput.value);
-let mouseRadius = parseInt(mouseRadiusInput.value);
+let gap = parseInt(gapInput.value); // rowGap del original
+let mouseRadius = 60; // Fijo como en el original
 let useImageColors = useImageColorsInput.checked;
 const FIXED_COLOR = '#4dd9e8'; // Color fijo cyan como el texto original
 
@@ -46,6 +46,7 @@ gapInput.addEventListener('input', (e) => {
 mouseRadiusInput.addEventListener('input', (e) => {
     mouseRadius = parseInt(e.target.value);
     document.getElementById('mouseValue').textContent = mouseRadius;
+    init(); // Reiniciar para actualizar
 });
 
 useImageColorsInput.addEventListener('change', (e) => {
@@ -70,16 +71,16 @@ themeToggle.addEventListener('click', () => {
 });
 
 resetBtn.addEventListener('click', () => {
-    particles.forEach(particle => particle.reset());
     particleSizeInput.value = 2;
-    gapInput.value = 8;
-    mouseRadiusInput.value = 50;
+    gapInput.value = 6;  // rowGap del original
+    mouseRadiusInput.value = 60;  // Fijo como en el original
     particleSize = 2;
-    gap = 8;
-    mouseRadius = 50;
+    gap = 6;
+    mouseRadius = 60;
     document.getElementById('sizeValue').textContent = particleSize;
     document.getElementById('gapValue').textContent = gap;
     document.getElementById('mouseValue').textContent = mouseRadius;
+    startTime = performance.now();  // Reiniciar animación
     init();
 });
 
@@ -92,115 +93,146 @@ ctx.imageSmoothingEnabled = false;
 
 // Mouse tracking
 const mouse = {
-    x: null,
-    y: null,
-    radius: mouseRadius
+    x: -1000,
+    y: -1000,
+    active: false  // Flag para saber si el mouse está activo
 };
 
 canvas.addEventListener('mousemove', (e) => {
-    // Usar offsetX y offsetY para coordenadas relativas al canvas
-    mouse.x = e.offsetX;
-    mouse.y = e.offsetY;
+    // Usar getBoundingClientRect para coordenadas precisas
+    const rect = canvas.getBoundingClientRect();
+    mouse.x = e.clientX - rect.left;
+    mouse.y = e.clientY - rect.top;
+    mouse.active = true;
 });
 
 canvas.addEventListener('mouseleave', () => {
-    mouse.x = null;
-    mouse.y = null;
+    mouse.active = false;
 });
+
+// Soporte para touch
+canvas.addEventListener('touchmove', (e) => {
+    const rect = canvas.getBoundingClientRect();
+    const touch = e.touches[0];
+    mouse.x = touch.clientX - rect.left;
+    mouse.y = touch.clientY - rect.top;
+    mouse.active = true;
+});
+
+canvas.addEventListener('touchend', () => {
+    mouse.active = false;
+});
+
+// Tiempo de inicio para animaciones
+let startTime = performance.now();
 
 // Clase de partícula
 class Particle {
-    constructor(x, y, color, brightness) {
-        this.baseX = x;
-        this.baseY = y;
-        this.x = x;
-        this.y = y;
+    constructor(x, y, color, brightness, lineLength) {
+        // Posición dispersa inicial (animación de entrada)
+        const scatterX = (Math.random() - 0.5) * 300;
+        const scatterY = (Math.random() - 0.5) * 300;
+        
+        this.targetX = x;  // Posición final
+        this.targetY = y;
+        this.x = x + scatterX;  // Posición inicial dispersa
+        this.y = y + scatterY;
+        
         this.color = color;
-        this.brightness = brightness; // Guardar el brillo para calcular longitud de línea
+        this.brightness = brightness;
+        this.lineLength = lineLength;  // Longitud calculada basada en brillo
         this.size = particleSize;
         this.density = (Math.random() * 30) + 1;
         this.vx = 0;
         this.vy = 0;
+        
+        // Para animación de entrada
+        this.baseAlpha = 0.5 + brightness / 255 * 0.5;
+        this.currentAlpha = 0;
+        this.delay = Math.random() * 0.3;  // Delay aleatorio en segundos
     }
 
     draw() {
-        ctx.fillStyle = this.color;
-        ctx.strokeStyle = this.color;
-        ctx.lineWidth = this.size;
-        ctx.lineCap = 'butt'; // Bordes cuadrados para líneas más sólidas
+        // Calcular progreso de animación de entrada
+        const elapsed = (performance.now() - startTime) / 1000;
+        const particleTime = elapsed - this.delay;
         
-        // Calcular longitud de la línea basándose en el brillo
-        // Brillo va de 0 a 255, normalizar a un rango de longitud
-        const minLength = 4;  // Aumentado para que todas las líneas tengan presencia
-        const maxLength = 6; // Mayor rango para más contraste
-        const lineLength = minLength + (this.brightness / 255) * (maxLength - minLength);
+        // Fade-in progresivo
+        if (particleTime < 0) return;  // Todavía no debe aparecer
         
-        // Dibujar línea horizontal
+        const fadeProgress = Math.min(particleTime / 1.5, 1);  // 1.5s para fade completo
+        const easedFade = 1 - Math.pow(1 - fadeProgress, 2);  // Easing suave
+        this.currentAlpha = this.baseAlpha * easedFade;
+        
+        // LineWidth dinámico basado en tamaño del canvas
+        const dynamicLineWidth = CANVAS_SIZE <= 280 ? 1.5 : 2;
+        
+        // Dibujar línea horizontal con alpha
+        ctx.strokeStyle = useImageColors ? this.color : `rgba(100, 255, 218, ${this.currentAlpha})`;
+        ctx.lineWidth = dynamicLineWidth;
+        ctx.lineCap = 'butt';
+        ctx.globalAlpha = useImageColors ? 1 : this.currentAlpha;
+        
         ctx.beginPath();
-        ctx.moveTo(this.x - lineLength / 2, this.y);
-        ctx.lineTo(this.x + lineLength / 2, this.y);
+        ctx.moveTo(this.x, this.y);
+        ctx.lineTo(this.x + this.lineLength, this.y);
         ctx.stroke();
+        
+        ctx.globalAlpha = 1;  // Resetear alpha global
     }
 
     update() {
-        // Calcular distancia del mouse
-        if (mouse.x && mouse.y) {
-            const dx = mouse.x - this.x;
-            const dy = mouse.y - this.y;
-            const distance = Math.sqrt(dx * dx + dy * dy);
-            const maxDistance = mouseRadius;
-
-            if (distance < maxDistance && distance > 0) {
-                // Usar una curva suave (easing) en lugar de lineal
-                const normalizedDistance = distance / maxDistance;
-                // Curved force usando función de easing suave
-                const force = Math.pow(1 - normalizedDistance, 2) * 0.3;
-                
-                const forceDirectionX = dx / distance;
-                const forceDirectionY = dy / distance;
-                
-                // Añadir algo de variación aleatoria para romper el círculo perfecto
-                const randomFactor = 0.7 + Math.random() * 0.6;
-                const angle = Math.atan2(dy, dx) + (Math.random() - 0.5) * 0.3;
-                
-                const directionX = Math.cos(angle) * force * this.density * randomFactor * 0.5;
-                const directionY = Math.sin(angle) * force * this.density * randomFactor * 0.5;
-                
-                this.vx -= directionX;
-                this.vy -= directionY;
+        // Calcular progreso de movimiento hacia la posición final
+        const elapsed = (performance.now() - startTime) / 1000;
+        const particleTime = elapsed - this.delay;
+        
+        if (particleTime < 0) return;  // Todavía no debe moverse
+        
+        const moveProgress = Math.min(particleTime / 2.5, 1);  // 2.5s para llegar a posición
+        const easedMove = 1 - Math.pow(1 - moveProgress, 3);  // Easing cúbico
+        
+        // Repeler desde el mouse (solo si está activo)
+        if (mouse.active) {
+            const dx = this.x - mouse.x;
+            const dy = this.y - mouse.y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            const maxDist = 60;  // Fijo como en el original
+            
+            if (dist < maxDist && dist > 0) {
+                const force = (1 - dist / maxDist) * 2;
+                this.vx += (dx / dist) * force;
+                this.vy += (dy / dist) * force;
             }
         }
-
-        // Volver a la posición original más lentamente
-        this.x += (this.baseX - this.x) * 0.08 + this.vx;
-        this.y += (this.baseY - this.y) * 0.08 + this.vy;
         
-        // Limitar la distancia máxima desde la posición original
-        const maxDisplacement = 12; // Máximo de píxeles que puede alejarse
-        const distanceFromBase = Math.sqrt(
-            Math.pow(this.x - this.baseX, 2) + 
-            Math.pow(this.y - this.baseY, 2)
-        );
+        // Atraer hacia la posición objetivo
+        const dx = this.targetX - this.x;
+        const dy = this.targetY - this.y;
         
-        if (distanceFromBase > maxDisplacement) {
-            const angle = Math.atan2(this.y - this.baseY, this.x - this.baseX);
-            this.x = this.baseX + Math.cos(angle) * maxDisplacement;
-            this.y = this.baseY + Math.sin(angle) * maxDisplacement;
-            // Reducir velocidad cuando alcanza el límite
-            this.vx *= 0.5;
-            this.vy *= 0.5;
-        }
+        const pullStrength = 0.01 + easedMove * 0.07;  // Aumenta con el tiempo
+        this.vx += dx * pullStrength;
+        this.vy += dy * pullStrength;
         
-        // Fricción más suave
-        this.vx *= 0.9;
-        this.vy *= 0.9;
+        // Fricción
+        this.vx *= 0.92;
+        this.vy *= 0.92;
+        
+        // Actualizar posición
+        this.x += this.vx;
+        this.y += this.vy;
     }
 
     reset() {
-        this.x = this.baseX;
-        this.y = this.baseY;
+        // Resetear a posición dispersa para re-animar
+        const scatterX = (Math.random() - 0.5) * 300;
+        const scatterY = (Math.random() - 0.5) * 300;
+        this.x = this.targetX + scatterX;
+        this.y = this.targetY + scatterY;
         this.vx = 0;
         this.vy = 0;
+        this.currentAlpha = 0;
+        this.delay = Math.random() * 0.3;
+        startTime = performance.now();  // Reiniciar tiempo
     }
 }
 
@@ -227,15 +259,24 @@ function init() {
         // NO dibujar fondo - dejar transparente para detectar solo la imagen
         // El fondo oscuro se ve en el canvas principal, no en el tempCanvas
         
-        // Calcular escala para que la imagen quepa en el canvas manteniendo aspecto
-        const scale = Math.min(CANVAS_SIZE / img.width, CANVAS_SIZE / img.height);
-        const scaledWidth = img.width * scale;
-        const scaledHeight = img.height * scale;
-        const x = (CANVAS_SIZE - scaledWidth) / 2;
-        const y = (CANVAS_SIZE - scaledHeight) / 2;
+        // Escalar imagen al 80% del canvas (como en el original)
+        const scale = 0.8;
+        const imgAspect = img.width / img.height;
         
-        // Dibujar imagen centrada y escalada
-        tempCtx.drawImage(img, x, y, scaledWidth, scaledHeight);
+        let drawHeight = CANVAS_SIZE * scale;
+        let drawWidth = drawHeight * imgAspect;
+        
+        // Ajustar si el ancho excede el límite
+        if (drawWidth > CANVAS_SIZE * scale) {
+            drawWidth = CANVAS_SIZE * scale;
+            drawHeight = drawWidth / imgAspect;
+        }
+        
+        const x = (CANVAS_SIZE - drawWidth) / 2;
+        const y = (CANVAS_SIZE - drawHeight) / 2;
+        
+        // Dibujar imagen centrada y escalada al 80%
+        tempCtx.drawImage(img, x, y, drawWidth, drawHeight);
         
         // Obtener datos de píxeles
         const imageData = tempCtx.getImageData(0, 0, tempCanvas.width, tempCanvas.height);
@@ -245,10 +286,15 @@ function init() {
         const offsetX = (canvas.width - tempCanvas.width) / 2;
         const offsetY = (canvas.height - tempCanvas.height) / 2;
         
-        // Crear partículas basadas en píxeles
-        for (let y = 0; y < tempCanvas.height; y += gap) {
-            for (let x = 0; x < tempCanvas.width; x += gap) {
-                const index = (y * tempCanvas.width + x) * 4;
+        // Crear partículas basadas en píxeles (recorrido dinámico)
+        // Gap dinámico basado en tamaño del canvas (como en el original)
+        const rowGap = CANVAS_SIZE <= 280 ? 5 : 6;
+        
+        for (let y = 0; y < tempCanvas.height; y += rowGap) {
+            let x = 0;
+            
+            while (x < tempCanvas.width) {
+                const index = (y * tempCanvas.width + Math.floor(x)) * 4;
                 const red = pixels[index];
                 const green = pixels[index + 1];
                 const blue = pixels[index + 2];
@@ -258,38 +304,38 @@ function init() {
                 if (alpha > 128) {
                     const brightness = (red + green + blue) / 3;
                     
+                    // Calcular longitud de línea basada en brillo
+                    const normalizedBrightness = brightness / 255;
+                    const lineLength = Math.floor(3 + normalizedBrightness * (CANVAS_SIZE <= 280 ? 8 : 15));
+                    
                     let color;
                     if (useImageColors) {
                         // Usar colores originales de la imagen
                         color = `rgb(${red}, ${green}, ${blue})`;
                     } else {
-                        // Crear gama de 2 tonos basándose en el brillo
-                        // Normalizar brillo de 0 a 1
-                        const normalizedBrightness = brightness / 255;
-                        
-                        // Definir 2 tonos del cyan (oscuro y claro)
-                        const darkTone = { r: 40, g: 120, b: 135 };     // Oscuro
-                        const lightTone = { r: 120, g: 230, b: 245 };   // Claro
-                        
-                        // Interpolar entre oscuro y claro según el brillo
-                        const finalColor = {
-                            r: Math.floor(darkTone.r + (lightTone.r - darkTone.r) * normalizedBrightness),
-                            g: Math.floor(darkTone.g + (lightTone.g - darkTone.g) * normalizedBrightness),
-                            b: Math.floor(darkTone.b + (lightTone.b - darkTone.b) * normalizedBrightness)
-                        };
-                        
-                        color = `rgb(${finalColor.r}, ${finalColor.g}, ${finalColor.b})`;
+                        // Color fijo cyan del original
+                        color = 'rgb(100, 255, 218)';
                     }
                     
                     particles.push(new Particle(
                         x + offsetX,
                         y + offsetY,
                         color,
-                        brightness  // Pasar el brillo a la partícula
+                        brightness,
+                        lineLength  // Pasar longitud de línea calculada
                     ));
+                    
+                    // Avanzar según la longitud de la línea + gap pequeño
+                    x += lineLength + 3;
+                } else {
+                    // Si es transparente, avanzar menos
+                    x += 4;
                 }
             }
         }
+        
+        // Reiniciar tiempo de animación
+        startTime = performance.now();
     };
     
     img.onerror = function() {
@@ -301,24 +347,8 @@ function init() {
 function animate() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     
-    // Verificar si el mouse está cerca de alguna partícula
-    let nearParticles = false;
-    if (mouse.x && mouse.y) {
-        for (let particle of particles) {
-            const dx = mouse.x - particle.baseX;
-            const dy = mouse.y - particle.baseY;
-            const distance = Math.sqrt(dx * dx + dy * dy);
-            
-            // Si está dentro del radio de influencia de alguna partícula
-            if (distance < 50) {
-                nearParticles = true;
-                break;
-            }
-        }
-    }
-    
-    // Cambiar cursor dinámicamente
-    canvas.style.cursor = nearParticles ? 'crosshair' : 'default';
+    // Cursor siempre crosshair como en el original
+    canvas.style.cursor = 'crosshair';
     
     particles.forEach(particle => {
         particle.update();
