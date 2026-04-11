@@ -3,7 +3,7 @@ const ctx = canvas.getContext('2d');
 
 // ========== CONFIGURACIÓN DEL TAMAÑO DEL CANVAS ==========
 // Cambia este valor para ajustar el tamaño de todo el canvas
-const CANVAS_SIZE = 400; // Cambia esto a cualquier tamaño que necesites
+const CANVAS_SIZE = 450; // Cambia esto a cualquier tamaño que necesites
 // =========================================================
 
 // Controles
@@ -12,6 +12,12 @@ const gapInput = document.getElementById('gap');
 const mouseRadiusInput = document.getElementById('mouseRadius');
 const useImageColorsInput = document.getElementById('useImageColors');
 const resetBtn = document.getElementById('resetBtn');
+const themeToggle = document.getElementById('themeToggle');
+const body = document.body;
+const controls = document.querySelector('.controls');
+
+// Estado del tema (false = oscuro, true = claro)
+let isDarkMode = true;
 
 // Valores de controles
 let particleSize = parseFloat(particleSizeInput.value);
@@ -47,13 +53,29 @@ useImageColorsInput.addEventListener('change', (e) => {
     init();
 });
 
+themeToggle.addEventListener('click', () => {
+    isDarkMode = !isDarkMode;
+    
+    if (isDarkMode) {
+        // Modo oscuro
+        body.style.backgroundColor = '#0a1628';
+        controls.style.backgroundColor = 'rgba(255, 255, 255, 0.1)';
+        themeToggle.textContent = '🌙 Modo Oscuro';
+    } else {
+        // Modo claro
+        body.style.backgroundColor = '#f0f0f0';
+        controls.style.backgroundColor = 'rgba(10, 22, 40, 0.8)';
+        themeToggle.textContent = '☀️ Modo Claro';
+    }
+});
+
 resetBtn.addEventListener('click', () => {
     particles.forEach(particle => particle.reset());
     particleSizeInput.value = 2;
-    gapInput.value = 6;
+    gapInput.value = 8;
     mouseRadiusInput.value = 50;
     particleSize = 2;
-    gap = 6;
+    gap = 8;
     mouseRadius = 50;
     document.getElementById('sizeValue').textContent = particleSize;
     document.getElementById('gapValue').textContent = gap;
@@ -64,6 +86,9 @@ resetBtn.addEventListener('click', () => {
 // Configuración del canvas
 canvas.width = CANVAS_SIZE;
 canvas.height = CANVAS_SIZE;
+
+// Desactivar antialiasing para líneas más sólidas y definidas
+ctx.imageSmoothingEnabled = false;
 
 // Mouse tracking
 const mouse = {
@@ -85,12 +110,13 @@ canvas.addEventListener('mouseleave', () => {
 
 // Clase de partícula
 class Particle {
-    constructor(x, y, color) {
+    constructor(x, y, color, brightness) {
         this.baseX = x;
         this.baseY = y;
         this.x = x;
         this.y = y;
         this.color = color;
+        this.brightness = brightness; // Guardar el brillo para calcular longitud de línea
         this.size = particleSize;
         this.density = (Math.random() * 30) + 1;
         this.vx = 0;
@@ -99,10 +125,21 @@ class Particle {
 
     draw() {
         ctx.fillStyle = this.color;
+        ctx.strokeStyle = this.color;
+        ctx.lineWidth = this.size;
+        ctx.lineCap = 'butt'; // Bordes cuadrados para líneas más sólidas
+        
+        // Calcular longitud de la línea basándose en el brillo
+        // Brillo va de 0 a 255, normalizar a un rango de longitud
+        const minLength = 4;  // Aumentado para que todas las líneas tengan presencia
+        const maxLength = 6; // Mayor rango para más contraste
+        const lineLength = minLength + (this.brightness / 255) * (maxLength - minLength);
+        
+        // Dibujar línea horizontal
         ctx.beginPath();
-        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
-        ctx.closePath();
-        ctx.fill();
+        ctx.moveTo(this.x - lineLength / 2, this.y);
+        ctx.lineTo(this.x + lineLength / 2, this.y);
+        ctx.stroke();
     }
 
     update() {
@@ -247,7 +284,8 @@ function init() {
                     particles.push(new Particle(
                         x + offsetX,
                         y + offsetY,
-                        color
+                        color,
+                        brightness  // Pasar el brillo a la partícula
                     ));
                 }
             }
