@@ -1,6 +1,11 @@
 const canvas = document.getElementById('canvas');
 const ctx = canvas.getContext('2d');
 
+// ========== CONFIGURACIÓN DEL TAMAÑO DEL CANVAS ==========
+// Cambia este valor para ajustar el tamaño de todo el canvas
+const CANVAS_SIZE = 400; // Cambia esto a cualquier tamaño que necesites
+// =========================================================
+
 // Controles
 const particleSizeInput = document.getElementById('particleSize');
 const gapInput = document.getElementById('gap');
@@ -39,8 +44,8 @@ resetBtn.addEventListener('click', () => {
 });
 
 // Configuración del canvas
-canvas.width = window.innerWidth;
-canvas.height = window.innerHeight;
+canvas.width = CANVAS_SIZE;
+canvas.height = CANVAS_SIZE;
 
 // Mouse tracking
 const mouse = {
@@ -50,8 +55,9 @@ const mouse = {
 };
 
 canvas.addEventListener('mousemove', (e) => {
-    mouse.x = e.x;
-    mouse.y = e.y;
+    // Usar offsetX y offsetY para coordenadas relativas al canvas
+    mouse.x = e.offsetX;
+    mouse.y = e.offsetY;
 });
 
 canvas.addEventListener('mouseleave', () => {
@@ -159,16 +165,18 @@ function init() {
     const tempCanvas = document.createElement('canvas');
     const tempCtx = tempCanvas.getContext('2d');
     
-    tempCanvas.width = 1000;
-    tempCanvas.height = 1000;
+    // El tempCanvas siempre usa el tamaño completo del canvas
+    tempCanvas.width = CANVAS_SIZE;
+    tempCanvas.height = CANVAS_SIZE;
     
     // Fondo oscuro
     tempCtx.fillStyle = '#0a1628';
     tempCtx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
     
-    // Dibujar texto o forma
+    // Dibujar texto o forma (escalado proporcionalmente)
     tempCtx.fillStyle = '#4dd9e8';
-    tempCtx.font = 'bold 350px Arial';
+    const fontSize = Math.floor(CANVAS_SIZE * 0.7); // 70% del tamaño del canvas
+    tempCtx.font = `bold ${fontSize}px Arial`;
     tempCtx.textAlign = 'center';
     tempCtx.textBaseline = 'middle';
     tempCtx.fillText('0x', tempCanvas.width / 2, tempCanvas.height / 2);
@@ -241,12 +249,8 @@ function animate() {
     requestAnimationFrame(animate);
 }
 
-// Responsive
-window.addEventListener('resize', () => {
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
-    init();
-});
+// Responsive (mantener tamaño fijo)
+// No es necesario recalcular en resize ya que el canvas tiene tamaño fijo
 
 // Iniciar
 init();
