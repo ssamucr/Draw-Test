@@ -220,8 +220,47 @@ function init() {
                 // Solo crear partícula si el píxel es visible
                 if (alpha > 128) {
                     const brightness = (red + green + blue) / 3;
-                    // Usar color de imagen o color fijo según el switch
-                    const color = useImageColors ? `rgb(${red}, ${green}, ${blue})` : FIXED_COLOR;
+                    
+                    let color;
+                    if (useImageColors) {
+                        // Usar colores originales de la imagen
+                        color = `rgb(${red}, ${green}, ${blue})`;
+                    } else {
+                        // Crear gama de tonos basándose en el brillo
+                        // Normalizar brillo de 0 a 1
+                        const normalizedBrightness = brightness / 255;
+                        
+                        // Definir 3 tonos del cyan (oscuro, medio, claro)
+                        // Tono base: #4dd9e8 (rgb(77, 217, 232))
+                        const darkTone = { r: 30, g: 100, b: 110 };    // Oscuro
+                        const midTone = { r: 77, g: 217, b: 232 };      // Medio (original)
+                        const lightTone = { r: 150, g: 240, b: 250 };   // Claro
+                        
+                        // Interpolar entre tonos según el brillo
+                        let finalColor;
+                        if (normalizedBrightness < 0.33) {
+                            // Zona oscura - usar tono oscuro
+                            finalColor = darkTone;
+                        } else if (normalizedBrightness < 0.66) {
+                            // Zona media - interpolar entre oscuro y medio
+                            const t = (normalizedBrightness - 0.33) / 0.33;
+                            finalColor = {
+                                r: Math.floor(darkTone.r + (midTone.r - darkTone.r) * t),
+                                g: Math.floor(darkTone.g + (midTone.g - darkTone.g) * t),
+                                b: Math.floor(darkTone.b + (midTone.b - darkTone.b) * t)
+                            };
+                        } else {
+                            // Zona clara - interpolar entre medio y claro
+                            const t = (normalizedBrightness - 0.66) / 0.34;
+                            finalColor = {
+                                r: Math.floor(midTone.r + (lightTone.r - midTone.r) * t),
+                                g: Math.floor(midTone.g + (lightTone.g - midTone.g) * t),
+                                b: Math.floor(midTone.b + (lightTone.b - midTone.b) * t)
+                            };
+                        }
+                        
+                        color = `rgb(${finalColor.r}, ${finalColor.g}, ${finalColor.b})`;
+                    }
                     
                     particles.push(new Particle(
                         x + offsetX,
