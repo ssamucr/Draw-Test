@@ -62,10 +62,20 @@
         <label>Sensibilidad ratón: <span id="mouseValue">60</span></label>
         <input type="range" id="mouseRadius" min="10" max="150" value="60" step="10">
         
+        <label style="margin-top: 15px;">Texto inicial:</label>
+        <input type="text" id="customText" value="SAMUEL" maxlength="10" 
+               style="width: 100%; padding: 5px; margin-top: 5px; background: rgba(255,255,255,0.1); 
+                      border: 1px solid rgba(255,255,255,0.2); color: white; border-radius: 3px;">
+        
         <label style="margin-top: 15px; display: flex; align-items: center; gap: 10px; cursor: pointer;">
             <input type="checkbox" id="useImageColors" style="cursor: pointer;">
             <span>Usar colores de imagen</span>
         </label>
+        
+        <div style="margin-top: 10px; font-size: 10px; opacity: 0.6;">
+            💜 Colores: Púrpura/Magenta<br>
+            ✨ Efecto: Glitch + Partículas flotantes
+        </div>
         
         <button id="themeToggle" style="margin-top: 10px; padding: 5px 10px; cursor: pointer; width: 100%;">🌙 Modo Oscuro</button>
         <button id="resetBtn" style="margin-top: 5px; padding: 5px 10px; cursor: pointer; width: 100%;">Resetear</button>
