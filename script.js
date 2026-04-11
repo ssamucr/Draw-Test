@@ -156,66 +156,68 @@ let particles = [];
 function init() {
     particles = [];
     
-    // Crear una imagen
+    // Cargar imagen
     const img = new Image();
     img.crossOrigin = 'anonymous';
+    img.src = 'image.png';
     
-    // Puedes usar tu propia imagen aquí
-    // Para este ejemplo, crearemos una imagen con texto
-    const tempCanvas = document.createElement('canvas');
-    const tempCtx = tempCanvas.getContext('2d');
-    
-    // El tempCanvas siempre usa el tamaño completo del canvas
-    tempCanvas.width = CANVAS_SIZE;
-    tempCanvas.height = CANVAS_SIZE;
-    
-    // Fondo oscuro
-    tempCtx.fillStyle = '#0a1628';
-    tempCtx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
-    
-    // Dibujar texto o forma (escalado proporcionalmente)
-    tempCtx.fillStyle = '#4dd9e8';
-    const fontSize = Math.floor(CANVAS_SIZE * 0.7); // 70% del tamaño del canvas
-    tempCtx.font = `bold ${fontSize}px Arial`;
-    tempCtx.textAlign = 'center';
-    tempCtx.textBaseline = 'middle';
-    tempCtx.fillText('0x', tempCanvas.width / 2, tempCanvas.height / 2);
-    
-    // O puedes dibujar una forma
-    // tempCtx.beginPath();
-    // tempCtx.arc(200, 200, 150, 0, Math.PI * 2);
-    // tempCtx.fill();
-    
-    // Obtener datos de píxeles
-    const imageData = tempCtx.getImageData(0, 0, tempCanvas.width, tempCanvas.height);
-    const pixels = imageData.data;
-    
-    // Calcular offset para centrar
-    const offsetX = (canvas.width - tempCanvas.width) / 2;
-    const offsetY = (canvas.height - tempCanvas.height) / 2;
-    
-    // Crear partículas basadas en píxeles
-    for (let y = 0; y < tempCanvas.height; y += gap) {
-        for (let x = 0; x < tempCanvas.width; x += gap) {
-            const index = (y * tempCanvas.width + x) * 4;
-            const red = pixels[index];
-            const green = pixels[index + 1];
-            const blue = pixels[index + 2];
-            const alpha = pixels[index + 3];
-            
-            // Solo crear partícula si el píxel es visible
-            if (alpha > 128) {
-                const brightness = (red + green + blue) / 3;
-                const color = `rgb(${red}, ${green}, ${blue})`;
+    img.onload = function() {
+        const tempCanvas = document.createElement('canvas');
+        const tempCtx = tempCanvas.getContext('2d');
+        
+        // El tempCanvas siempre usa el tamaño completo del canvas
+        tempCanvas.width = CANVAS_SIZE;
+        tempCanvas.height = CANVAS_SIZE;
+        
+        // Fondo oscuro
+        tempCtx.fillStyle = '#0a1628';
+        tempCtx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
+        
+        // Calcular escala para que la imagen quepa en el canvas manteniendo aspecto
+        const scale = Math.min(CANVAS_SIZE / img.width, CANVAS_SIZE / img.height);
+        const scaledWidth = img.width * scale;
+        const scaledHeight = img.height * scale;
+        const x = (CANVAS_SIZE - scaledWidth) / 2;
+        const y = (CANVAS_SIZE - scaledHeight) / 2;
+        
+        // Dibujar imagen centrada y escalada
+        tempCtx.drawImage(img, x, y, scaledWidth, scaledHeight);
+        
+        // Obtener datos de píxeles
+        const imageData = tempCtx.getImageData(0, 0, tempCanvas.width, tempCanvas.height);
+        const pixels = imageData.data;
+        
+        // Calcular offset para centrar
+        const offsetX = (canvas.width - tempCanvas.width) / 2;
+        const offsetY = (canvas.height - tempCanvas.height) / 2;
+        
+        // Crear partículas basadas en píxeles
+        for (let y = 0; y < tempCanvas.height; y += gap) {
+            for (let x = 0; x < tempCanvas.width; x += gap) {
+                const index = (y * tempCanvas.width + x) * 4;
+                const red = pixels[index];
+                const green = pixels[index + 1];
+                const blue = pixels[index + 2];
+                const alpha = pixels[index + 3];
                 
-                particles.push(new Particle(
-                    x + offsetX,
-                    y + offsetY,
-                    color
-                ));
+                // Solo crear partícula si el píxel es visible
+                if (alpha > 128) {
+                    const brightness = (red + green + blue) / 3;
+                    const color = `rgb(${red}, ${green}, ${blue})`;
+                    
+                    particles.push(new Particle(
+                        x + offsetX,
+                        y + offsetY,
+                        color
+                    ));
+                }
             }
         }
-    }
+    };
+    
+    img.onerror = function() {
+        console.error('Error al cargar la imagen. Asegúrate de que image.png existe en la carpeta.');
+    };
 }
 
 // Función de animación
