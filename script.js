@@ -41,6 +41,16 @@ mouseRadiusInput.addEventListener('input', (e) => {
 
 resetBtn.addEventListener('click', () => {
     particles.forEach(particle => particle.reset());
+    particleSizeInput.value = 2;
+    gapInput.value = 6;
+    mouseRadiusInput.value = 50;
+    particleSize = 2;
+    gap = 6;
+    mouseRadius = 50;
+    document.getElementById('sizeValue').textContent = particleSize;
+    document.getElementById('gapValue').textContent = gap;
+    document.getElementById('mouseValue').textContent = mouseRadius;
+    init();
 });
 
 // Configuración del canvas
