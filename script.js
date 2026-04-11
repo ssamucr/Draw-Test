@@ -10,12 +10,15 @@ const CANVAS_SIZE = 400; // Cambia esto a cualquier tamaño que necesites
 const particleSizeInput = document.getElementById('particleSize');
 const gapInput = document.getElementById('gap');
 const mouseRadiusInput = document.getElementById('mouseRadius');
+const useImageColorsInput = document.getElementById('useImageColors');
 const resetBtn = document.getElementById('resetBtn');
 
 // Valores de controles
 let particleSize = parseFloat(particleSizeInput.value);
 let gap = parseInt(gapInput.value);
 let mouseRadius = parseInt(mouseRadiusInput.value);
+let useImageColors = useImageColorsInput.checked;
+const FIXED_COLOR = '#4dd9e8'; // Color fijo cyan como el texto original
 
 // Actualizar displays
 document.getElementById('sizeValue').textContent = particleSize;
@@ -37,6 +40,11 @@ gapInput.addEventListener('input', (e) => {
 mouseRadiusInput.addEventListener('input', (e) => {
     mouseRadius = parseInt(e.target.value);
     document.getElementById('mouseValue').textContent = mouseRadius;
+});
+
+useImageColorsInput.addEventListener('change', (e) => {
+    useImageColors = e.target.checked;
+    init();
 });
 
 resetBtn.addEventListener('click', () => {
@@ -179,9 +187,8 @@ function init() {
         tempCanvas.width = CANVAS_SIZE;
         tempCanvas.height = CANVAS_SIZE;
         
-        // Fondo oscuro
-        tempCtx.fillStyle = '#0a1628';
-        tempCtx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
+        // NO dibujar fondo - dejar transparente para detectar solo la imagen
+        // El fondo oscuro se ve en el canvas principal, no en el tempCanvas
         
         // Calcular escala para que la imagen quepa en el canvas manteniendo aspecto
         const scale = Math.min(CANVAS_SIZE / img.width, CANVAS_SIZE / img.height);
@@ -213,7 +220,8 @@ function init() {
                 // Solo crear partícula si el píxel es visible
                 if (alpha > 128) {
                     const brightness = (red + green + blue) / 3;
-                    const color = `rgb(${red}, ${green}, ${blue})`;
+                    // Usar color de imagen o color fijo según el switch
+                    const color = useImageColors ? `rgb(${red}, ${green}, ${blue})` : FIXED_COLOR;
                     
                     particles.push(new Particle(
                         x + offsetX,
