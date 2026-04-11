@@ -19,6 +19,7 @@
             min-height: 100vh;
             overflow: hidden;
             font-family: Arial, sans-serif;
+            padding: 10px;
         }
 
         canvas {
@@ -26,6 +27,8 @@
             border-radius: 10px;
             /* background-color: red; */
             display: block;
+            max-width: 100%;
+            height: auto;
         }
 
         .controls {
@@ -36,6 +39,111 @@
             padding: 20px;
             border-radius: 10px;
             color: white;
+            transition: transform 0.3s ease, opacity 0.3s ease;
+            transform-origin: top left;
+            max-width: calc(100vw - 40px);
+            max-height: calc(100vh - 100px);
+            overflow-y: auto;
+            backdrop-filter: blur(10px);
+        }
+
+        .controls.hidden {
+            transform: translateX(-100%);
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .settings-toggle {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            z-index: 1000;
+            backdrop-filter: blur(10px);
+        }
+
+        .settings-toggle:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: rotate(90deg);
+        }
+
+        .settings-toggle.controls-visible {
+            left: 280px;
+        }
+
+        .restart-toggle {
+            position: fixed;
+            top: 20px;
+            left: 80px;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            z-index: 1000;
+            backdrop-filter: blur(10px);
+        }
+
+        .restart-toggle:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: rotate(360deg);
+        }
+
+        .restart-toggle.controls-visible {
+            left: 340px;
+        }
+
+        .signature {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 12px;
+            font-weight: 300;
+            letter-spacing: 0.5px;
+            z-index: 10000;
+            pointer-events: none;
+            white-space: nowrap;
+            padding: 6px 10px;
+            background: rgba(10, 22, 40, 0.5);
+            border-radius: 6px;
+            backdrop-filter: blur(5px);
+            transition: all 0.3s ease;
+        }
+
+        /* Estilos para modo claro */
+        body.light-mode .settings-toggle,
+        body.light-mode .restart-toggle {
+            background: rgba(10, 22, 40, 0.7);
+            border-color: rgba(10, 22, 40, 0.3);
+        }
+
+        body.light-mode .settings-toggle:hover,
+        body.light-mode .restart-toggle:hover {
+            background: rgba(10, 22, 40, 0.9);
+        }
+
+        body.light-mode .signature {
+            background: rgba(10, 22, 40, 0.8);
+            color: rgba(255, 255, 255, 0.9);
         }
 
         .controls input {
@@ -48,10 +156,139 @@
             margin-top: 10px;
             font-size: 12px;
         }
+
+        /* Responsive para móviles */
+        @media (max-width: 768px) {
+            body {
+                padding: 5px;
+            }
+
+            .controls {
+                top: 10px;
+                left: 10px;
+                padding: 15px;
+                font-size: 14px;
+                max-width: calc(100vw - 20px);
+                width: 280px;
+            }
+
+            .controls h3 {
+                font-size: 16px;
+                margin-bottom: 10px;
+            }
+
+            .controls label {
+                font-size: 11px;
+            }
+
+            .settings-toggle {
+                top: 10px;
+                left: 10px;
+                width: 45px;
+                height: 45px;
+                font-size: 20px;
+            }
+
+            .settings-toggle.controls-visible {
+                left: 300px;
+            }
+
+            .restart-toggle {
+                top: 10px;
+                left: 65px;
+                width: 45px;
+                height: 45px;
+                font-size: 20px;
+            }
+
+            .restart-toggle.controls-visible {
+                left: 355px;
+            }
+
+            .signature {
+                bottom: 15px;
+                right: 15px;
+                font-size: 10px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .controls {
+                width: 240px;
+                padding: 12px;
+            }
+
+            .controls h3 {
+                font-size: 14px;
+            }
+
+            .controls label {
+                font-size: 10px;
+            }
+
+            .settings-toggle {
+                width: 40px;
+                height: 40px;
+                font-size: 18px;
+            }
+
+            .settings-toggle.controls-visible {
+                left: 250px;
+            }
+
+            .restart-toggle {
+                left: 55px;
+                width: 40px;
+                height: 40px;
+                font-size: 18px;
+            }
+
+            .restart-toggle.controls-visible {
+                left: 295px;
+            }
+
+            .signature {
+                bottom: 10px;
+                right: 10px;
+                font-size: 9px;
+            }
+
+            .controls input[type="range"] {
+                height: 6px;
+            }
+
+            .controls button {
+                font-size: 12px !important;
+                padding: 8px 10px !important;
+            }
+        }
+
+        /* Landscape móvil */
+        @media (max-height: 500px) and (orientation: landscape) {
+            .controls {
+                max-height: calc(100vh - 80px);
+                top: 10px;
+            }
+
+            .settings-toggle,
+            .restart-toggle {
+                top: 10px;
+            }
+        }
     </style>
 </head>
 <body>
-    <div class="controls">
+    <button class="settings-toggle" id="settingsToggle" title="Mostrar/Ocultar Controles">
+        ⚙️
+    </button>
+    
+    <button class="restart-toggle" id="restartToggle" title="Reiniciar Animación">
+        🔄
+    </button>
+    
+    <div class="signature" id="signature">by Samuel Castro</div>
+    
+    <div class="controls hidden">
         <h3>Controles</h3>
         <label>Tamaño de partícula: <span id="sizeValue">2</span></label>
         <input type="range" id="particleSize" min="1" max="5" value="2" step="0.5">
@@ -67,15 +304,10 @@
                style="width: 100%; padding: 5px; margin-top: 5px; background: rgba(255,255,255,0.1); 
                       border: 1px solid rgba(255,255,255,0.2); color: white; border-radius: 3px;">
         
-        <label style="margin-top: 15px; display: flex; align-items: center; gap: 10px; cursor: pointer;">
-            <input type="checkbox" id="useImageColors" style="cursor: pointer;">
-            <span>Usar colores de imagen</span>
+        <label style="margin-top: 15px; display: flex; align-items: center; cursor: pointer; gap: 4px;">
+            <input type="checkbox" id="useImageColors" style="cursor: pointer; max-width: 20px;">
+            <span>Color</span>
         </label>
-        
-        <div style="margin-top: 10px; font-size: 10px; opacity: 0.6;">
-            💜 Colores: Púrpura/Magenta<br>
-            ✨ Efecto: Glitch + Partículas flotantes
-        </div>
         
         <button id="themeToggle" style="margin-top: 10px; padding: 5px 10px; cursor: pointer; width: 100%;">🌙 Modo Oscuro</button>
         <button id="resetBtn" style="margin-top: 5px; padding: 5px 10px; cursor: pointer; width: 100%;">Resetear</button>

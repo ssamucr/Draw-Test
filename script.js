@@ -6,8 +6,24 @@ const ctx = canvas.getContext('2d');
 // ============================================================
 
 // 🎨 TAMAÑO Y ESCALA
-const CANVAS_SIZE = 450;                    // Tamaño del canvas en píxeles
+let CANVAS_SIZE = 450;                      // Tamaño del canvas en píxeles (se ajusta dinámicamente)
 const IMAGE_SCALE = 0.8;                    // Escala de la imagen (0.8 = 80% del canvas)
+
+// Función para calcular el tamaño del canvas según el dispositivo
+function getResponsiveCanvasSize() {
+    const maxSize = 450;
+    const minSize = 280;
+    const screenWidth = window.innerWidth;
+    const screenHeight = window.innerHeight;
+    const smallerDimension = Math.min(screenWidth, screenHeight);
+    
+    // En móviles, usar el 90% de la dimensión menor
+    if (screenWidth < 768) {
+        return Math.max(minSize, Math.min(maxSize, Math.floor(smallerDimension * 0.9)));
+    }
+    
+    return maxSize;
+}
 
 // 🌈 COLORES DE MARCA PERSONAL (Púrpura/Magenta)
 const BRAND_COLORS = {
@@ -90,6 +106,9 @@ const useImageColorsInput = document.getElementById('useImageColors');
 const customTextInput = document.getElementById('customText');
 const resetBtn = document.getElementById('resetBtn');
 const themeToggle = document.getElementById('themeToggle');
+const settingsToggle = document.getElementById('settingsToggle');
+const restartToggle = document.getElementById('restartToggle');
+const signature = document.getElementById('signature');
 const body = document.body;
 const controls = document.querySelector('.controls');
 
@@ -146,14 +165,52 @@ themeToggle.addEventListener('click', () => {
     if (isDarkMode) {
         // Modo oscuro
         body.style.backgroundColor = DARK_THEME_BG;
+        body.classList.remove('light-mode');
         controls.style.backgroundColor = DARK_THEME_CONTROLS;
         themeToggle.textContent = '🌙 Modo Oscuro';
     } else {
         // Modo claro
         body.style.backgroundColor = LIGHT_THEME_BG;
+        body.classList.add('light-mode');
         controls.style.backgroundColor = LIGHT_THEME_CONTROLS;
         themeToggle.textContent = '☀️ Modo Claro';
     }
+});
+
+settingsToggle.addEventListener('click', () => {
+    controls.classList.toggle('hidden');
+    settingsToggle.classList.toggle('controls-visible');
+    restartToggle.classList.toggle('controls-visible');
+});
+
+restartToggle.addEventListener('click', () => {
+    // Reiniciar la animación desde el texto
+    particles.forEach(particle => particle.reset());
+    animationPhase = 'text';
+    phaseProgress = 0;
+    startTime = performance.now();
+    
+    // Reiniciar la transición después del tiempo configurado
+    setTimeout(() => {
+        animationPhase = 'transition';
+        const transitionStart = performance.now();
+        
+        function animateTransition() {
+            const elapsed = performance.now() - transitionStart;
+            phaseProgress = Math.min(elapsed / TRANSITION_DURATION, 1);
+            
+            // Easing suave
+            phaseProgress = 1 - Math.pow(1 - phaseProgress, 3);
+            
+            if (phaseProgress < 1) {
+                requestAnimationFrame(animateTransition);
+            } else {
+                animationPhase = 'image';
+            }
+        }
+        
+        animateTransition();
+    }, TEXT_DISPLAY_TIME);
 });
 
 resetBtn.addEventListener('click', () => {
@@ -174,12 +231,18 @@ resetBtn.addEventListener('click', () => {
     init();
 });
 
-// Configuración del canvas
-canvas.width = CANVAS_SIZE;
-canvas.height = CANVAS_SIZE;
+// Función para configurar el canvas con tamaño responsive
+function setupCanvas() {
+    CANVAS_SIZE = getResponsiveCanvasSize();
+    canvas.width = CANVAS_SIZE;
+    canvas.height = CANVAS_SIZE;
+    
+    // Desactivar antialiasing para líneas más sólidas y definidas
+    ctx.imageSmoothingEnabled = false;
+}
 
-// Desactivar antialiasing para líneas más sólidas y definidas
-ctx.imageSmoothingEnabled = false;
+// Configuración inicial del canvas
+setupCanvas();
 
 // Mouse tracking
 const mouse = {
@@ -615,8 +678,33 @@ function animate() {
     requestAnimationFrame(animate);
 }
 
-// Responsive (mantener tamaño fijo)
-// No es necesario recalcular en resize ya que el canvas tiene tamaño fijo
+// Responsive - actualizar canvas en resize con debounce
+let resizeTimeout;
+window.addEventListener('resize', () => {
+    clearTimeout(resizeTimeout);
+    resizeTimeout = setTimeout(() => {
+        const newSize = getResponsiveCanvasSize();
+        if (newSize !== CANVAS_SIZE) {
+            setupCanvas();
+            init();
+        }
+    }, 250);
+});
+
+// Prevenir zoom en móviles al hacer doble tap
+let lastTouchEnd = 0;
+document.addEventListener('touchend', (e) => {
+    const now = Date.now();
+    if (now - lastTouchEnd <= 300) {
+        e.preventDefault();
+    }
+    lastTouchEnd = now;
+}, { passive: false });
+
+// Prevenir gestos de zoom en móviles
+document.addEventListener('gesturestart', (e) => {
+    e.preventDefault();
+});
 
 // Iniciar
 init();
