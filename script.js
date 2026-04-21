@@ -89,7 +89,7 @@ const BASE_ALPHA_MIN = 0.5;                 // Alpha base mínimo
 const BASE_ALPHA_RANGE = 0.5;               // Rango adicional basado en brillo
 
 // 🎭 TEMAS
-const DARK_THEME_BG = '#0a1628';            // Color de fondo modo oscuro
+const DARK_THEME_BG = '#0E0E0E';            // Color de fondo modo oscuro
 const LIGHT_THEME_BG = '#f0f0f0';           // Color de fondo modo claro
 const DARK_THEME_CONTROLS = 'rgba(255, 255, 255, 0.1)';     // Color panel oscuro
 const LIGHT_THEME_CONTROLS = 'rgba(10, 22, 40, 0.8)';       // Color panel claro
